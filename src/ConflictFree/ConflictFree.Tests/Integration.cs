@@ -38,6 +38,10 @@ public class InventoryService
 
   public int GetStock(Guid productId)
   {
+    if (productId == new Guid("2F4F24AE-09C7-4F0E-851D-5D0A0A00CA28"))
+    {
+      return 1;
+    }
     return 10;
   }
 }
