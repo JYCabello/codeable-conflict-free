@@ -19,3 +19,26 @@ public class Integration
     Assert.Equal(0, inventoryService.GetStock(productId));
   }
 }
+
+public class InventoryService
+{
+  public void InsertStock(Guid productId, int amount)
+  {
+    throw new NotImplementedException();
+  }
+
+  public Guid RetrieveStock(Guid productId, int amount)
+  {
+    throw new NotImplementedException();
+  }
+
+  public bool IsSuccessful(Guid retrievalId)
+  {
+    throw new NotImplementedException();
+  }
+
+  public int GetStock(Guid productId)
+  {
+    throw new NotImplementedException();
+  }
+}
