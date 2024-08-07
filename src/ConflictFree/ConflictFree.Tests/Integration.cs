@@ -36,7 +36,7 @@ public class InventoryService
 
   public bool IsSuccessful(Guid retrievalId)
   {
-    throw new NotImplementedException();
+    return true;
   }
 
   public int GetStock(Guid productId)
