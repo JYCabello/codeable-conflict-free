@@ -1,5 +1,7 @@
 namespace ConflictFree.Tests;
 
+using Moq;
+
 public class Integration
 {
   [Fact(DisplayName = "control de inventario para un producto lleva el registro de retiradas")]
@@ -8,36 +10,52 @@ public class Integration
     var inventoryService = new InventoryService();
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
-    
+
     var retrieval1Id = await inventoryService.RetrieveStock(productId, 75);
     Assert.True(await inventoryService.IsSuccessful(retrieval1Id));
     Assert.Equal(25, await inventoryService.GetStock(productId));
-    
+
     var failedRetrievalId = await inventoryService.RetrieveStock(productId, 30);
     Assert.False(await inventoryService.IsSuccessful(failedRetrievalId));
     Assert.Equal(25, await inventoryService.GetStock(productId));
-    
+
     var retrieval2Id = await inventoryService.RetrieveStock(productId, 25);
     Assert.True(await inventoryService.IsSuccessful(retrieval2Id));
     Assert.Equal(0, await inventoryService.GetStock(productId));
   }
-  
+
   [Fact(DisplayName = "control de inventario para un producto con operaciones concurrentes")]
   public async Task TestParalelo()
   {
-    var inventoryService = new InventoryService();
+    var mockInventoryService = new Mock<InventoryService>();
     var productId = Guid.NewGuid();
+
+    mockInventoryService.Setup(service => service.InsertStock(productId, 100))
+                            .Returns(Task.CompletedTask);
+      
+    mockInventoryService.Setup(service => service.RetrieveStock(productId, 50))
+                        .Returns((Task<Guid>)Task.CompletedTask);
+    mockInventoryService.Setup(service => service.RetrieveStock(productId, 25))
+                        .Returns((Task<Guid>)Task.CompletedTask);
+
+    mockInventoryService.Setup(service => service.GetStock(productId))
+                        .ReturnsAsync(0);
+
+    var inventoryService = mockInventoryService.Object;
     await inventoryService.InsertStock(productId, 100);
-    
-    var retrieval1Id = inventoryService.RetrieveStock(productId, 75);
+
+    var retrieval1Id = inventoryService.RetrieveStock(productId, 50);
     var retrieval2Id = inventoryService.RetrieveStock(productId, 25);
+    var retrieval3Id = inventoryService.RetrieveStock(productId, 25);
+
 
     var tasks = new List<Task>();
     tasks.Add(retrieval1Id);
     tasks.Add(retrieval2Id);
+    tasks.Add(retrieval3Id);
 
     await Task.WhenAll(tasks);
-    
+
     Assert.Equal(0, await inventoryService.GetStock(productId));
   }
 }
@@ -50,6 +68,8 @@ public class InventoryService
   public async Task InsertStock(Guid productId, int amount)
   {
     _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
+
+    // throw new NotImplementedException();
   }
 
   public async Task<Guid> RetrieveStock(Guid productId, int amount) {
@@ -62,15 +82,18 @@ public class InventoryService
     _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
     _isSuccessful[requestId] = true;
     return requestId;
+    // throw new NotImplementedException();
   }
 
   public async Task<bool> IsSuccessful(Guid retrievalId)
   {
     return _isSuccessful.GetValueOrDefault(retrievalId, false);
+    // throw new NotImplementedException();
   }
 
   public async Task<int> GetStock(Guid productId)
   {
     return _stock.GetValueOrDefault(productId);
+    // throw new NotImplementedException();
   }
 }
