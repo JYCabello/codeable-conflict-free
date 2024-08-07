@@ -22,4 +22,30 @@ public class InsertStockShould
     service.InsertStock(product2Id, 1);
     Assert.Equal(1, service.GetStock(product2Id));
   }
+
+  [Fact(DisplayName = "register the stock that was inserted for two products with different amounts")]
+  public void Test3()
+  {
+    var service = new InventoryService();
+    var product1Id = new Guid("E798C10E-183C-4E2E-8E7D-8FE88C893588");
+    service.InsertStock(product1Id, 11);
+    Assert.Equal(11, service.GetStock(product1Id));
+    var product2Id = new Guid("2F4F24AE-09C7-4F0E-851D-5D0A0A00CA28");
+    service.InsertStock(product2Id, 14);
+    Assert.Equal(14, service.GetStock(product2Id));
+  }
+
+  [Fact(DisplayName = "register the stock that was inserted for two products with unknown amounts and ids")]
+  public void Test4()
+  {
+    var service = new InventoryService();
+    var product1Id = Guid.NewGuid();
+    var amount1 = new Random().Next(100000);
+    service.InsertStock(product1Id, amount1);
+    Assert.Equal(amount1, service.GetStock(product1Id));
+    var product2Id = Guid.NewGuid();
+    var amount2 = new Random().Next(100000);
+    service.InsertStock(product2Id, amount2);
+    Assert.Equal(amount2, service.GetStock(product2Id));
+  }
 }

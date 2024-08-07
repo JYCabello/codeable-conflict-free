@@ -22,8 +22,11 @@ public class Integration
 
 public class InventoryService
 {
+  private readonly Dictionary<Guid, int> _stock = new();
+
   public void InsertStock(Guid productId, int amount)
   {
+    _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
   }
 
   public Guid RetrieveStock(Guid productId, int amount)
@@ -38,10 +41,6 @@ public class InventoryService
 
   public int GetStock(Guid productId)
   {
-    if (productId == new Guid("2F4F24AE-09C7-4F0E-851D-5D0A0A00CA28"))
-    {
-      return 1;
-    }
-    return 10;
+    return _stock.GetValueOrDefault(productId);
   }
 }
