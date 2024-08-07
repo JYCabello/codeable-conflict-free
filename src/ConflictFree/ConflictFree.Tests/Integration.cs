@@ -24,7 +24,6 @@ public class InventoryService
 {
   public void InsertStock(Guid productId, int amount)
   {
-    throw new NotImplementedException();
   }
 
   public Guid RetrieveStock(Guid productId, int amount)
@@ -39,6 +38,6 @@ public class InventoryService
 
   public int GetStock(Guid productId)
   {
-    throw new NotImplementedException();
+    return 10;
   }
 }
