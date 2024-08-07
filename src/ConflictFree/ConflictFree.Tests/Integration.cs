@@ -23,6 +23,7 @@ public class Integration
 public class InventoryService
 {
   private readonly Dictionary<Guid, int> _stock = new();
+  private readonly Dictionary<Guid, bool> _isSuccessful = new();
 
   public void InsertStock(Guid productId, int amount)
   {
@@ -30,13 +31,20 @@ public class InventoryService
   }
 
   public Guid RetrieveStock(Guid productId, int amount) {
+    var currentStock = _stock.GetValueOrDefault(productId);
+    var requestId = Guid.NewGuid();
+    if (currentStock < amount) {
+      _isSuccessful[requestId] = false;
+      return requestId;
+    }
     _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
-    return Guid.NewGuid();
+    _isSuccessful[requestId] = true;
+    return requestId;
   }
 
   public bool IsSuccessful(Guid retrievalId)
   {
-    return true;
+    return _isSuccessful.GetValueOrDefault(retrievalId, false);
   }
 
   public int GetStock(Guid productId)
