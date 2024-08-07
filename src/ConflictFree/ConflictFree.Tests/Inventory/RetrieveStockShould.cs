@@ -7,8 +7,8 @@ public class RetrieveStockShould
     {
         var service = new InventoryService();
         var productId = Guid.NewGuid();
-        service.InsertStock(productId, 10);
-        service.RetrieveStock(productId,10);
+        service.InsertStock(productId, 32);
+        service.RetrieveStock(productId, 32);
         Assert.Equal(0, service.GetStock(productId));
     }
 }

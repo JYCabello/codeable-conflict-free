@@ -29,10 +29,7 @@ public class InventoryService
     _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
   }
 
-  public Guid RetrieveStock(Guid productId, int amount)
-  {
-    throw new NotImplementedException();
-  }
+  public Guid RetrieveStock(Guid productId, int amount) => Guid.NewGuid();
 
   public bool IsSuccessful(Guid retrievalId)
   {
