@@ -65,25 +65,25 @@ public class InventoryService
 
   public record RestockRequest(Guid productId, int quantity);
   public record RetrievalRequest(Guid productId, int quantity);
-  
+
   private readonly object _lock = new();
 
   public async Task InsertStock(Guid productId, int amount)
   {
-      if (amount < 0)
-      {
-        throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
-      }
-      if (amount == 0)
-      {
-        throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
-      }
+    if (amount < 0)
+    {
+      throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
+    }
+    if (amount == 0)
+    {
+      throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
+    }
 
-      var oldStock = _stock.GetValueOrDefault(productId);
+    var oldStock = _stock.GetValueOrDefault(productId);
 
-      await Task.Delay(100);
+    await Task.Delay(100);
 
-      _stock[productId] = oldStock + amount;
+    _stock[productId] = oldStock + amount;
   }
 
   public async Task<Guid> RetrieveStock(Guid productId, int amount)
@@ -135,3 +135,7 @@ public class InventoryRepository
 public record ProductStock(Guid ProductId, int Stock, Guid[] FailedRequests);
 
 public interface IEvent;
+
+public record StockRestored(Guid ProductId, int Amount) : IEvent;
+
+public record StockRemovalRequested(Guid ProductId, int Amount, Guid RequestId) : IEvent;
