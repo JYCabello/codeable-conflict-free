@@ -5,7 +5,7 @@ public class InsertStockShould
   [Fact(DisplayName = "register the stock that was inserted")]
   public async Task Test()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var productId = new Guid("0C4702CE-C1E4-4082-A06D-EB8773DAD6E8");
     await service.InsertStock(productId, 10);
     Assert.Equal(10, await service.GetStock(productId));
@@ -14,7 +14,7 @@ public class InsertStockShould
   [Fact(DisplayName = "register the stock that was inserted for two products")]
   public async Task Test2()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
 
     var product1Id = new Guid("E798C10E-183C-4E2E-8E7D-8FE88C893588");
     await service.InsertStock(product1Id, 10);
@@ -28,7 +28,7 @@ public class InsertStockShould
   [Fact(DisplayName = "register the stock that was inserted for two products with different amounts")]
   public async Task Test3()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var product1Id = new Guid("E798C10E-183C-4E2E-8E7D-8FE88C893588");
     await service.InsertStock(product1Id, 11);
     Assert.Equal(11, await service.GetStock(product1Id));
@@ -41,7 +41,7 @@ public class InsertStockShould
   [Fact(DisplayName = "register the stock that was inserted for two products with unknown amounts and ids")]
   public async Task Test4()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var product1Id = Guid.NewGuid();
     var amount1 = new Random().Next(100000);
     await service.InsertStock(product1Id, amount1);
@@ -56,7 +56,7 @@ public class InsertStockShould
   [Fact(DisplayName = "handle parallel stock insertions correctly")]
   public async Task ParallelInsertions()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var productId = Guid.NewGuid();
 
     var insertions = new int[]{
@@ -77,7 +77,7 @@ public class InsertStockShould
   [Fact(DisplayName = "not allow negative insertions")]
   public async Task NoNegativeInsertions()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var product1Id = new Guid();
     await service.InsertStock(product1Id, 10);
     var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product1Id, -1));
@@ -88,7 +88,7 @@ public class InsertStockShould
   [Fact(DisplayName = "not allow zero amount insertions")]
   public async Task NoZeroInsertions()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var productId = new Guid();
     await service.InsertStock(productId, 5);
     var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(productId, 0));
@@ -100,7 +100,7 @@ public class InsertStockShould
   [Fact(DisplayName = "not allow zero amount insertions for two products")]
   public async Task NoZeroInsertionsForTwoProducts()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var product1Id = Guid.NewGuid();
     await service.InsertStock(product1Id, 5);
     var exception1 = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product1Id, 0));

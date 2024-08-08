@@ -5,7 +5,7 @@ public class RetrieveStockShould
   [Fact(DisplayName = "retrieve the stock of the product with the amount requested")]
   public async Task Test()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var productId = Guid.NewGuid();
     await service.InsertStock(productId, 32);
     await service.RetrieveStock(productId, 32);
@@ -15,7 +15,7 @@ public class RetrieveStockShould
   [Fact(DisplayName = "handle parallel retrieval requests correctly")]
   public async Task ParallelRetrievals()
   {
-    var inventoryService = new InventoryService();
+    var inventoryService = new InventoryService(new());
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
 
@@ -34,7 +34,7 @@ public class RetrieveStockShould
   [Fact(DisplayName = "not allow zero amount retrieval requests for two products")]
   public async Task NoZeroRetrievalsForTwoProducts()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var product1Id = Guid.NewGuid();
     await service.InsertStock(product1Id, 5);
     await service.RetrieveStock(product1Id, 5);
@@ -55,7 +55,7 @@ public class RetrieveStockShould
   [Fact(DisplayName = "retrieve an amount greater than stock")]
   public async Task AmountGreaterThanStock()
   {
-    var service = new InventoryService();
+    var service = new InventoryService(new());
     var productId = Guid.NewGuid();
     await service.InsertStock(productId, 15);
 
@@ -63,7 +63,7 @@ public class RetrieveStockShould
     var retrievalId = await service.RetrieveStock(productId, 20);
 
     // Verificar que la operación no fue exitosa
-    var isSuccess = await service.IsSuccessful(retrievalId);
+    var isSuccess = await service.IsSuccessful(productId, retrievalId);
     Assert.False(
       isSuccess,
       "La operación debería haber fallado porque la cantidad es mayor al stock disponible"

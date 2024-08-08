@@ -7,20 +7,20 @@ public class Integration
   [Fact(DisplayName = "control de inventario para un producto lleva el registro de retiradas")]
   public async Task Test1()
   {
-    var inventoryService = new InventoryService();
+    var inventoryService = new InventoryService(new());
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
 
     var retrieval1Id = await inventoryService.RetrieveStock(productId, 75);
-    Assert.True(await inventoryService.IsSuccessful(retrieval1Id));
+    Assert.True(await inventoryService.IsSuccessful(productId, retrieval1Id));
     Assert.Equal(25, await inventoryService.GetStock(productId));
 
     var failedRetrievalId = await inventoryService.RetrieveStock(productId, 30);
-    Assert.False(await inventoryService.IsSuccessful(failedRetrievalId));
+    Assert.False(await inventoryService.IsSuccessful(productId, failedRetrievalId));
     Assert.Equal(25, await inventoryService.GetStock(productId));
 
     var retrieval2Id = await inventoryService.RetrieveStock(productId, 25);
-    Assert.True(await inventoryService.IsSuccessful(retrieval2Id));
+    Assert.True(await inventoryService.IsSuccessful(productId, retrieval2Id));
     Assert.Equal(0, await inventoryService.GetStock(productId));
   }
 
@@ -29,7 +29,7 @@ public class Integration
   )]
   public async Task Test2()
   {
-    var inventoryService = new InventoryService();
+    var inventoryService = new InventoryService(new());
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
 
@@ -41,7 +41,7 @@ public class Integration
 
     foreach (var retrievalId in retrievalIds)
     {
-      var isSuccess = await inventoryService.IsSuccessful(retrievalId);
+      var isSuccess = await inventoryService.IsSuccessful(productId, retrievalId);
       Assert.True(isSuccess, "Operation should have been successful");
       var remainingStock = await inventoryService.GetStock(productId);
       Assert.True(remainingStock >= 0, "Stock should not be negative");
@@ -54,53 +54,39 @@ public class Integration
 
 public class InventoryService
 {
-  private readonly Dictionary<Guid, bool> _isSuccessful = new();
+  private readonly InventoryRepository _repository;
 
-  private readonly object _lock = new();
-  private readonly Dictionary<Guid, int> _stock = new();
-
-  private List<RestockRequest> RestockEvents = new();
+  public InventoryService(InventoryRepository repository)
+  {
+    _repository = repository;
+  }
 
   public async Task InsertStock(Guid productId, int amount)
   {
     if (amount < 0) throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
     if (amount == 0) throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
-
-    var oldStock = _stock.GetValueOrDefault(productId);
-
-    await Task.Delay(100);
-
-    _stock[productId] = oldStock + amount;
+    _repository.InsertEvent(new StockRestored(productId, amount, DateTime.UtcNow));
   }
 
   public async Task<Guid> RetrieveStock(Guid productId, int amount)
   {
     var requestId = Guid.NewGuid();
-    var currentStock = _stock.GetValueOrDefault(productId);
 
     await Task.Delay(100);
     if (amount == 0) throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
-    if (currentStock < amount)
-    {
-      _isSuccessful[requestId] = false;
-    }
-    else
-    {
-      _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
-      _isSuccessful[requestId] = true;
-    }
+    _repository.InsertEvent(new StockRemovalRequested(productId, amount, requestId, DateTime.UtcNow));
 
     return await Task.FromResult(requestId);
   }
 
-  public async Task<bool> IsSuccessful(Guid retrievalId)
+  public async Task<bool> IsSuccessful(Guid productId, Guid retrievalId)
   {
-    return _isSuccessful.GetValueOrDefault(retrievalId, false);
+    return !_repository.GetProductStock(productId).FailedRequests.Contains(retrievalId);
   }
 
   public async Task<int> GetStock(Guid productId)
   {
-    return _stock.GetValueOrDefault(productId);
+    return _repository.GetProductStock(productId).Stock;
   }
 
   public record RestockRequest(Guid productId, int quantity);
