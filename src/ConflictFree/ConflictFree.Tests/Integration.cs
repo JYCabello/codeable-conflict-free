@@ -63,9 +63,6 @@ public class InventoryService
 
   public async Task InsertStock(Guid productId, int amount)
   {
-    await Task.Delay(100);
-    lock (_lock)
-    {
       if (amount < 0)
       {
         throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
@@ -74,31 +71,34 @@ public class InventoryService
       {
         throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
       }
-      _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
-    }
+
+      var oldStock = _stock.GetValueOrDefault(productId);
+
+      await Task.Delay(100);
+
+      _stock[productId] = oldStock + amount;
   }
 
   public async Task<Guid> RetrieveStock(Guid productId, int amount)
   {
-    await Task.Delay(100);
     var requestId = Guid.NewGuid();
-    lock (_lock)
+    var currentStock = _stock.GetValueOrDefault(productId);
+
+    await Task.Delay(100);
+    if (amount == 0)
     {
-      var currentStock = _stock.GetValueOrDefault(productId);
-      if (amount == 0)
-      {
-        throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
-      }
-      if (currentStock < amount)
-      {
-        _isSuccessful[requestId] = false;
-      }
-      else
-      {
-        _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
-        _isSuccessful[requestId] = true;
-      }
+      throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
     }
+    if (currentStock < amount)
+    {
+      _isSuccessful[requestId] = false;
+    }
+    else
+    {
+      _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
+      _isSuccessful[requestId] = true;
+    }
+
     return await Task.FromResult(requestId);
   }
 
