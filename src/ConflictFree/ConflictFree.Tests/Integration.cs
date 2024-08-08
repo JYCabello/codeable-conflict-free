@@ -124,12 +124,12 @@ public class InventoryRepository
 {
   public ProductStock GetProductStock(Guid productId)
   {
-    throw new NotImplementedException();
+    return new ProductStock(productId, 1, []);
   }
 
   public void InsertEvent(IEvent @event)
   {
-    throw new NotImplementedException();
+
   }
 }
 public record ProductStock(Guid ProductId, int Stock, Guid[] FailedRequests);
