@@ -24,13 +24,14 @@ public class Integration
     Assert.Equal(0, await inventoryService.GetStock(productId));
   }
 
-  [Fact(DisplayName = "control de inventario para un producto lleva el registro de retiradas en paralelo")]
+  [Fact(
+    DisplayName = "control de inventario para un producto lleva el registro de retiradas en paralelo"
+  )]
   public async Task Test2()
   {
     var inventoryService = new InventoryService();
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
-
 
     var retrievals = new int[] { 20, 20, 20, 20, 20 };
     var tasks = new List<Task<Guid>>();
@@ -65,7 +66,7 @@ public class InventoryService
     await Task.Delay(100);
     lock (_lock)
     {
-      if(amount < 0)
+      if (amount < 0)
       {
         throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
       }
@@ -84,6 +85,10 @@ public class InventoryService
     lock (_lock)
     {
       var currentStock = _stock.GetValueOrDefault(productId);
+      if (amount == 0)
+      {
+        throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
+      }
       if (currentStock < amount)
       {
         _isSuccessful[requestId] = false;
