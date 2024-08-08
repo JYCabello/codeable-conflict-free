@@ -101,12 +101,12 @@ public class InsertStockShould
   public async Task NoZeroInsertionsForTwoProducts()
   {
     var service = new InventoryService();
-    var product1Id = new Guid();
+    var product1Id = Guid.NewGuid();
     await service.InsertStock(product1Id, 5);
     var exception1 = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product1Id, 0));
     Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception1.Message);
 
-    var product2Id = new Guid();
+    var product2Id = Guid.NewGuid();
     await service.InsertStock(product2Id, 10);
     var exception2 = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product2Id, 0));
     Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception2.Message);
