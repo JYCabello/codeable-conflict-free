@@ -51,4 +51,25 @@ public class RetrieveStockShould
     );
     Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception2.Message);
   }
+
+  [Fact(DisplayName = "retrieve an amount greater than stock")]
+  public async Task AmountGreaterThanStock()
+  {
+    var service = new InventoryService();
+    var productId = Guid.NewGuid();
+    await service.InsertStock(productId, 15);
+
+    // Intentar retirar una cantidad mayor al stock
+    var retrievalId = await service.RetrieveStock(productId, 20);
+
+    // Verificar que la operación no fue exitosa
+    var isSuccess = await service.IsSuccessful(retrievalId);
+    Assert.False(
+      isSuccess,
+      "La operación debería haber fallado porque la cantidad es mayor al stock disponible"
+    );
+
+    // Verificar que el stock no haya cambiado
+    Assert.Equal(15, await service.GetStock(productId));
+  }
 }
