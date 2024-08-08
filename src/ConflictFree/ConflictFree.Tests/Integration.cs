@@ -69,6 +69,10 @@ public class InventoryService
       {
         return;
       }
+      if (amount == 0)
+      {
+        throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
+      }
       _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
     }
   }
