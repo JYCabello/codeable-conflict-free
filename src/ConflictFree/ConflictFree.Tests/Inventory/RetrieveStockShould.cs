@@ -34,13 +34,22 @@ public class RetrieveStockShould
         Assert.Equal(0, await inventoryService.GetStock(productId));
     }
 
-    [Fact(DisplayName = "retrieve an amount greater than stock")]
-    public async Task AmountGreaterThanStock()
+    [Fact(DisplayName = "not allow zero amount retrieval requests for two products")]
+    public async Task NoZeroRetrievalsForTwoProducts()
     {
         var service = new InventoryService();
-        var productId = Guid.NewGuid();
-        await service.InsertStock(productId, 15);
-        await service.RetrieveStock(productId, 20);
-        Assert.Equal(0, await service.GetStock(productId));
+        var product1Id = Guid.NewGuid();
+        await service.InsertStock(product1Id, 5);
+        await service.RetrieveStock(product1Id, 5);
+        await service.RetrieveStock(product1Id, 0);
+        var exception1 = await Assert.ThrowsAsync<ArgumentException>(() => service.RetrieveStock(product1Id, 0));
+        Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception1.Message);
+
+        var product2Id = Guid.NewGuid();
+        await service.InsertStock(product2Id, 10);
+        await service.RetrieveStock(product2Id, 10);
+        await service.RetrieveStock(product2Id, 0);
+        var exception2 = await Assert.ThrowsAsync<ArgumentException>(() => service.RetrieveStock(product2Id, 0));
+        Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception2.Message);
     }
 }
