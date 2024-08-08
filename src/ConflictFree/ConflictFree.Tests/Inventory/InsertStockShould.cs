@@ -97,4 +97,22 @@ public class InsertStockShould
     Assert.Equal(5, await service.GetStock(productId));
   }
 
+  [Fact(DisplayName = "not allow zero amount insertions for two products")]
+  public async Task NoZeroInsertionsForTwoProducts()
+  {
+    var service = new InventoryService();
+    var product1Id = new Guid();
+    await service.InsertStock(product1Id, 5);
+    var exception1 = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product1Id, 0));
+    Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception1.Message);
+
+    var product2Id = new Guid();
+    await service.InsertStock(product2Id, 10);
+    var exception2 = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product2Id, 0));
+    Assert.Equal("Amount must be greater than zero. (Parameter 'amount')", exception2.Message);
+
+    Assert.Equal(5, await service.GetStock(product1Id));
+    Assert.Equal(10, await service.GetStock(product2Id));
+  }
+
 }
