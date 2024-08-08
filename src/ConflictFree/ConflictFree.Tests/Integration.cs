@@ -1,5 +1,6 @@
 namespace ConflictFree.Tests;
 
+using System.ComponentModel.Design;
 using System.Runtime.CompilerServices;
 
 public class Integration
@@ -59,6 +60,12 @@ public class InventoryService
 {
   private readonly Dictionary<Guid, int> _stock = new();
   private readonly Dictionary<Guid, bool> _isSuccessful = new();
+
+  private List<RestockRequest> RestockEvents = new();
+
+  public record RestockRequest(Guid productId, int quantity);
+  public record RetrievalRequest(Guid productId, int quantity);
+  
   private readonly object _lock = new();
 
   public async Task InsertStock(Guid productId, int amount)
@@ -112,3 +119,19 @@ public class InventoryService
     return _stock.GetValueOrDefault(productId);
   }
 }
+
+public class InventoryRepository
+{
+  public ProductStock GetProductStock(Guid productId)
+  {
+    throw new NotImplementedException();
+  }
+
+  public void InsertEvent(IEvent @event)
+  {
+    throw new NotImplementedException();
+  }
+}
+public record ProductStock(Guid ProductId, int Stock, Guid[] FailedRequests);
+
+public interface IEvent;
