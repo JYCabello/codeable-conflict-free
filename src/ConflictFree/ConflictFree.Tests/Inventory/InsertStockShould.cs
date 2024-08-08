@@ -46,6 +46,7 @@ public class InsertStockShould
     var amount1 = new Random().Next(100000);
     await service.InsertStock(product1Id, amount1);
     Assert.Equal(amount1, await service.GetStock(product1Id));
+    
     var product2Id = Guid.NewGuid();
     var amount2 = new Random().Next(100000);
     await service.InsertStock(product2Id, amount2);

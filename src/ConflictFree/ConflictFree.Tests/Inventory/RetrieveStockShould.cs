@@ -11,4 +11,26 @@ public class RetrieveStockShould
         await service.RetrieveStock(productId, 32);
         Assert.Equal(0, await service.GetStock(productId));
     }
+
+    [Fact(DisplayName = "handle parallel retrieval requests correctly")]
+    public async Task ParallelRetrievals()
+    {
+        var inventoryService = new InventoryService();
+        var productId = Guid.NewGuid();
+        await inventoryService.InsertStock(productId, 100);
+
+        var retrievals = new int[]{
+        1, 2, 3, 4,
+        2, 4, 6, 8,
+        30, 40};
+
+        var tasks = new List<Task>();
+        foreach(var retrieval in retrievals)
+        {
+        tasks.Add(inventoryService.RetrieveStock(productId, retrieval));
+        }
+
+        await Task.WhenAll(tasks);
+        Assert.Equal(0, await inventoryService.GetStock(productId));
+    }
 }

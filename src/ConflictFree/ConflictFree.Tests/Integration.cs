@@ -21,25 +21,6 @@ public class Integration
     Assert.True(await inventoryService.IsSuccessful(retrieval2Id));
     Assert.Equal(0, await inventoryService.GetStock(productId));
   }
-  
-  [Fact(DisplayName = "control de inventario para un producto con operaciones concurrentes")]
-  public async Task TestParalelo()
-  {
-    var inventoryService = new InventoryService();
-    var productId = Guid.NewGuid();
-    await inventoryService.InsertStock(productId, 100);
-    
-    var retrieval1Id = inventoryService.RetrieveStock(productId, 75);
-    var retrieval2Id = inventoryService.RetrieveStock(productId, 25);
-
-    var tasks = new List<Task>();
-    tasks.Add(retrieval1Id);
-    tasks.Add(retrieval2Id);
-
-    await Task.WhenAll(tasks);
-    
-    Assert.Equal(0, await inventoryService.GetStock(productId));
-  }
 }
 
 public class InventoryService
@@ -53,12 +34,15 @@ public class InventoryService
   }
 
   public async Task<Guid> RetrieveStock(Guid productId, int amount) {
+    await Task.Delay(100);
+    
     var currentStock = _stock.GetValueOrDefault(productId);
     var requestId = Guid.NewGuid();
     if (currentStock < amount) {
       _isSuccessful[requestId] = false;
       return requestId;
     }
+
     _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
     _isSuccessful[requestId] = true;
     return requestId;
