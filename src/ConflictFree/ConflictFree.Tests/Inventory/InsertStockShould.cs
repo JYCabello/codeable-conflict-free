@@ -80,8 +80,8 @@ public class InsertStockShould
     var service = new InventoryService();
     var product1Id = new Guid();
     await service.InsertStock(product1Id, 10);
-    await service.InsertStock(product1Id, -1);
-
+    var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.InsertStock(product1Id, -1));
+    Assert.Equal("Amount can't be less than zero. (Parameter 'amount')", exception.Message);
     Assert.Equal(10, await service.GetStock(product1Id));
   }
 
