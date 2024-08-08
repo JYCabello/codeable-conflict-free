@@ -33,4 +33,14 @@ public class RetrieveStockShould
         await Task.WhenAll(tasks);
         Assert.Equal(0, await inventoryService.GetStock(productId));
     }
+
+    [Fact(DisplayName = "retrieve an amount greater than stock")]
+    public async Task AmountGreaterThanStock()
+    {
+        var service = new InventoryService();
+        var productId = Guid.NewGuid();
+        await service.InsertStock(productId, 15);
+        await service.RetrieveStock(productId, 20);
+        Assert.Equal(0, await service.GetStock(productId));
+    }
 }
