@@ -65,7 +65,11 @@ public class InventoryService
     await Task.Delay(100);
     lock (_lock)
     {
-      if (amount <= 0)
+      if(amount < 0)
+      {
+        return;
+      }
+      if (amount == 0)
       {
         throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
       }
