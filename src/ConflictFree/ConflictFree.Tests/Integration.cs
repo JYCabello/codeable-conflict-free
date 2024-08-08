@@ -1,5 +1,7 @@
 namespace ConflictFree.Tests;
 
+using System.Runtime.CompilerServices;
+
 public class Integration
 {
   [Fact(DisplayName = "control de inventario para un producto lleva el registro de retiradas")]
@@ -42,15 +44,13 @@ public class Integration
     foreach (var retrievalId in retrievalIds)
     {
       var isSuccess = await inventoryService.IsSuccessful(retrievalId);
-      if(isSuccess)
-      {
-        var remainingStock = await inventoryService.GetStock(productId);
-        Assert.True(remainingStock >= 0, "Stock should not be negative");
-      }
+      Assert.True(isSuccess, "Operation should have been successful");
+      var remainingStock = await inventoryService.GetStock(productId);
+      Assert.True(remainingStock >= 0, "Stock should not be negative");
     }
 
     var finalStock = await inventoryService.GetStock(productId);
-    Assert.True(finalStock >= 0, "Stock should not be negative");
+    Assert.True(finalStock == 0, "Stock should be zero");
   }
 }
 
@@ -63,16 +63,21 @@ public class InventoryService
   public async Task InsertStock(Guid productId, int amount)
   {
     await Task.Delay(100);
-    _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
+    lock (_lock)
+    {
+      _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
+    }
   }
 
-  public async Task<Guid> RetrieveStock(Guid productId, int amount) {
+  public async Task<Guid> RetrieveStock(Guid productId, int amount)
+  {
     await Task.Delay(100);
     var requestId = Guid.NewGuid();
-    lock(_lock)
+    lock (_lock)
     {
       var currentStock = _stock.GetValueOrDefault(productId);
-      if (currentStock < amount) {
+      if (currentStock < amount)
+      {
         _isSuccessful[requestId] = false;
       }
       else
