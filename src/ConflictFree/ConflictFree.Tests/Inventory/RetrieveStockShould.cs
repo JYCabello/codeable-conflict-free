@@ -27,7 +27,7 @@ public class RetrieveStockShould
         var tasks = new List<Task>();
         foreach(var retrieval in retrievals)
         {
-        tasks.Add(inventoryService.RetrieveStock(productId, retrieval));
+          tasks.Add(inventoryService.RetrieveStock(productId, retrieval));
         }
 
         await Task.WhenAll(tasks);

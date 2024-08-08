@@ -8,18 +8,49 @@ public class Integration
     var inventoryService = new InventoryService();
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
-    
+
     var retrieval1Id = await inventoryService.RetrieveStock(productId, 75);
     Assert.True(await inventoryService.IsSuccessful(retrieval1Id));
     Assert.Equal(25, await inventoryService.GetStock(productId));
-    
+
     var failedRetrievalId = await inventoryService.RetrieveStock(productId, 30);
     Assert.False(await inventoryService.IsSuccessful(failedRetrievalId));
     Assert.Equal(25, await inventoryService.GetStock(productId));
-    
+
     var retrieval2Id = await inventoryService.RetrieveStock(productId, 25);
     Assert.True(await inventoryService.IsSuccessful(retrieval2Id));
     Assert.Equal(0, await inventoryService.GetStock(productId));
+  }
+
+  [Fact(DisplayName = "control de inventario para un producto lleva el registro de retiradas en paralelo")]
+  public async Task Test2()
+  {
+    var inventoryService = new InventoryService();
+    var productId = Guid.NewGuid();
+    await inventoryService.InsertStock(productId, 100);
+
+
+    var retrievals = new int[] { 20, 20, 20, 20, 20 };
+    var tasks = new List<Task<Guid>>();
+    foreach (var retrieval in retrievals)
+    {
+      tasks.Add(inventoryService.RetrieveStock(productId, retrieval));
+    }
+
+    var retrievalIds = await Task.WhenAll(tasks);
+
+    foreach (var retrievalId in retrievalIds)
+    {
+      var isSuccess = await inventoryService.IsSuccessful(retrievalId);
+      if(isSuccess)
+      {
+        var remainingStock = await inventoryService.GetStock(productId);
+        Assert.True(remainingStock >= 0, "Stock should not be negative");
+      }
+    }
+
+    var finalStock = await inventoryService.GetStock(productId);
+    Assert.True(finalStock >= 0, "Stock should not be negative");
   }
 }
 
@@ -27,6 +58,7 @@ public class InventoryService
 {
   private readonly Dictionary<Guid, int> _stock = new();
   private readonly Dictionary<Guid, bool> _isSuccessful = new();
+  private readonly object _lock = new();
 
   public async Task InsertStock(Guid productId, int amount)
   {
@@ -35,17 +67,20 @@ public class InventoryService
 
   public async Task<Guid> RetrieveStock(Guid productId, int amount) {
     await Task.Delay(100);
-    
-    var currentStock = _stock.GetValueOrDefault(productId);
     var requestId = Guid.NewGuid();
-    if (currentStock < amount) {
-      _isSuccessful[requestId] = false;
-      return requestId;
+    lock(_lock)
+    {
+      var currentStock = _stock.GetValueOrDefault(productId);
+      if (currentStock < amount) {
+        _isSuccessful[requestId] = false;
+      }
+      else
+      {
+        _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
+        _isSuccessful[requestId] = true;
+      }
     }
-
-    _stock[productId] = _stock.GetValueOrDefault(productId) - amount;
-    _isSuccessful[requestId] = true;
-    return requestId;
+    return await Task.FromResult(requestId);
   }
 
   public async Task<bool> IsSuccessful(Guid retrievalId)
