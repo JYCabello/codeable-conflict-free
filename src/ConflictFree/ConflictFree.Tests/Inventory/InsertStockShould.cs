@@ -65,12 +65,23 @@ public class InsertStockShould
         90, 100};
 
     var tasks = new List<Task>();
-    foreach(var insertion in insertions)
+    foreach (var insertion in insertions)
     {
-        tasks.Add(service.InsertStock(productId, insertion));
+      tasks.Add(service.InsertStock(productId, insertion));
     }
 
     await Task.WhenAll(tasks);
     Assert.Equal(550, await service.GetStock(productId)); // Suma de todos los insertions
+  }
+
+  [Fact(DisplayName = "not allowed lesser than one")]
+  public async Task NoNegativeInsertions()
+  {
+    var service = new InventoryService();
+    var product1Id = new Guid();
+    await service.InsertStock(product1Id, 10);
+    await service.InsertStock(product1Id, -1);
+
+    Assert.Equal(10, await service.GetStock(product1Id));
   }
 }
