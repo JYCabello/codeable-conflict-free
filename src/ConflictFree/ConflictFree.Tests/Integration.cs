@@ -1,7 +1,6 @@
-namespace ConflictFree.Tests;
+using System.Collections.Concurrent;
 
-using System.ComponentModel.Design;
-using System.Runtime.CompilerServices;
+namespace ConflictFree.Tests;
 
 public class Integration
 {
@@ -34,12 +33,9 @@ public class Integration
     var productId = Guid.NewGuid();
     await inventoryService.InsertStock(productId, 100);
 
-    var retrievals = new int[] { 20, 20, 20, 20, 20 };
+    var retrievals = new[] { 20, 20, 20, 20, 20 };
     var tasks = new List<Task<Guid>>();
-    foreach (var retrieval in retrievals)
-    {
-      tasks.Add(inventoryService.RetrieveStock(productId, retrieval));
-    }
+    foreach (var retrieval in retrievals) tasks.Add(inventoryService.RetrieveStock(productId, retrieval));
 
     var retrievalIds = await Task.WhenAll(tasks);
 
@@ -58,26 +54,17 @@ public class Integration
 
 public class InventoryService
 {
-  private readonly Dictionary<Guid, int> _stock = new();
   private readonly Dictionary<Guid, bool> _isSuccessful = new();
+
+  private readonly object _lock = new();
+  private readonly Dictionary<Guid, int> _stock = new();
 
   private List<RestockRequest> RestockEvents = new();
 
-  public record RestockRequest(Guid productId, int quantity);
-  public record RetrievalRequest(Guid productId, int quantity);
-
-  private readonly object _lock = new();
-
   public async Task InsertStock(Guid productId, int amount)
   {
-    if (amount < 0)
-    {
-      throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
-    }
-    if (amount == 0)
-    {
-      throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
-    }
+    if (amount < 0) throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
+    if (amount == 0) throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
 
     var oldStock = _stock.GetValueOrDefault(productId);
 
@@ -92,10 +79,7 @@ public class InventoryService
     var currentStock = _stock.GetValueOrDefault(productId);
 
     await Task.Delay(100);
-    if (amount == 0)
-    {
-      throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
-    }
+    if (amount == 0) throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
     if (currentStock < amount)
     {
       _isSuccessful[requestId] = false;
@@ -118,24 +102,52 @@ public class InventoryService
   {
     return _stock.GetValueOrDefault(productId);
   }
+
+  public record RestockRequest(Guid productId, int quantity);
+
+  public record RetrievalRequest(Guid productId, int quantity);
 }
 
 public class InventoryRepository
 {
+  private readonly ConcurrentBag<IEvent> _events = new();
+
   public ProductStock GetProductStock(Guid productId)
   {
-    return new ProductStock(productId, 1, []);
+    return _events
+      .Where(e => e.ProductId == productId)
+      .OrderBy(e => e.CreatedAt)
+      .Aggregate(new ProductStock(productId, 0, []), (stock, @event) => stock.Apply(@event));
   }
 
   public void InsertEvent(IEvent @event)
   {
-
+    _events.Add(@event);
   }
 }
-public record ProductStock(Guid ProductId, int Stock, Guid[] FailedRequests);
 
-public interface IEvent;
+public record ProductStock(Guid ProductId, int Stock, Guid[] FailedRequests)
+{
+  public ProductStock Apply(IEvent @event)
+  {
+    return @event switch
+    {
+      StockRestored e => this with { Stock = Stock + e.Amount },
+      StockRemovalRequested e =>
+        Stock < e.Amount
+          ? this with { FailedRequests = FailedRequests.Append(e.RequestId).ToArray() }
+          : this with { Stock = Stock - e.Amount },
+      _ => this
+    };
+  }
+}
 
-public record StockRestored(Guid ProductId, int Amount) : IEvent;
+public interface IEvent
+{
+  Guid ProductId { get; }
+  DateTime CreatedAt { get; }
+}
 
-public record StockRemovalRequested(Guid ProductId, int Amount, Guid RequestId) : IEvent;
+public record StockRestored(Guid ProductId, int Amount, DateTime CreatedAt) : IEvent;
+
+public record StockRemovalRequested(Guid ProductId, int Amount, Guid RequestId, DateTime CreatedAt) : IEvent;
