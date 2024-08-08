@@ -15,11 +15,11 @@ public class InsertStockShould
   public async Task Test2()
   {
     var service = new InventoryService();
-    
+
     var product1Id = new Guid("E798C10E-183C-4E2E-8E7D-8FE88C893588");
     await service.InsertStock(product1Id, 10);
     Assert.Equal(10, await service.GetStock(product1Id));
-    
+
     var product2Id = new Guid("2F4F24AE-09C7-4F0E-851D-5D0A0A00CA28");
     await service.InsertStock(product2Id, 1);
     Assert.Equal(1, await service.GetStock(product2Id));
@@ -32,7 +32,7 @@ public class InsertStockShould
     var product1Id = new Guid("E798C10E-183C-4E2E-8E7D-8FE88C893588");
     await service.InsertStock(product1Id, 11);
     Assert.Equal(11, await service.GetStock(product1Id));
-    
+
     var product2Id = new Guid("2F4F24AE-09C7-4F0E-851D-5D0A0A00CA28");
     await service.InsertStock(product2Id, 14);
     Assert.Equal(14, await service.GetStock(product2Id));
@@ -46,10 +46,31 @@ public class InsertStockShould
     var amount1 = new Random().Next(100000);
     await service.InsertStock(product1Id, amount1);
     Assert.Equal(amount1, await service.GetStock(product1Id));
-    
+
     var product2Id = Guid.NewGuid();
     var amount2 = new Random().Next(100000);
     await service.InsertStock(product2Id, amount2);
     Assert.Equal(amount2, await service.GetStock(product2Id));
+  }
+
+  [Fact(DisplayName = "handle parallel stock insertions correctly")]
+  public async Task ParallelInsertions()
+  {
+    var service = new InventoryService();
+    var productId = Guid.NewGuid();
+
+    var insertions = new int[]{
+        10, 20, 30, 40,
+        50, 60, 70, 80,
+        90, 100};
+
+    var tasks = new List<Task>();
+    foreach(var insertion in insertions)
+    {
+        tasks.Add(service.InsertStock(productId, insertion));
+    }
+
+    await Task.WhenAll(tasks);
+    Assert.Equal(550, await service.GetStock(productId)); // Suma de todos los insertions
   }
 }

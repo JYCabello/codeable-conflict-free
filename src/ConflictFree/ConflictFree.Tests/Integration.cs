@@ -62,6 +62,7 @@ public class InventoryService
 
   public async Task InsertStock(Guid productId, int amount)
   {
+    await Task.Delay(100);
     _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
   }
 
