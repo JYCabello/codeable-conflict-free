@@ -74,7 +74,7 @@ public class InsertStockShould
     Assert.Equal(550, await service.GetStock(productId)); // Suma de todos los insertions
   }
 
-  [Fact(DisplayName = "not allowed lesser than one")]
+  [Fact(DisplayName = "not allow negative insertions")]
   public async Task NoNegativeInsertions()
   {
     var service = new InventoryService();

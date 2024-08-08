@@ -65,6 +65,10 @@ public class InventoryService
     await Task.Delay(100);
     lock (_lock)
     {
+      if (amount < 0)
+      {
+        return;
+      }
       _stock[productId] = _stock.GetValueOrDefault(productId) + amount;
     }
   }
