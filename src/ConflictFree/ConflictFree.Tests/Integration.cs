@@ -67,7 +67,7 @@ public class InventoryService
     {
       if(amount < 0)
       {
-        return;
+        throw new ArgumentException("Amount can't be less than zero.", nameof(amount));
       }
       if (amount == 0)
       {
